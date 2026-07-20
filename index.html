@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karekök Hesaplama | Teknobird</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --bg: #0c0f14;
+    --panel: #131820;
+    --panel-2: #171d27;
+    --panel-3: #0d1219;
+    --line: #232b38;
+    --text: #e7ecf3;
+    --muted: #8a94a6;
+    --accent: #e13a3a;
+    --accent-dim: #6c2020;
+    --cyan: #35c6d1;
+    --amber: #e0a336;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; background: transparent; }
+  body{
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    display:flex;
+    justify-content:center;
+    padding: 20px 0;
+  }
+
+  .wrap{ width:100%; max-width: none; padding: 0 14px; }
+
+  .card{
+    position:relative;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 30px 28px 28px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px -25px rgba(0,0,0,0.6);
+  }
+
+  .ghost-sqrt{
+    position:absolute; right: -6px; top: -50px;
+    font-family: var(--mono); font-size: 168px; font-weight: 700;
+    color: var(--text); opacity: 0.03; line-height: 1;
+    pointer-events:none; user-select:none;
+  }
+
+  .eyebrow{
+    display:flex; align-items:center; gap: 8px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  }
+  .eyebrow::before{
+    content:""; width:7px; height:7px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim);
+  }
+
+  h1{ font-family: 'Sora', sans-serif; font-size: 25px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub{ color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0 0 22px; max-width: 60ch; }
+
+  .input-row{
+    display:flex;
+    gap: 10px;
+    align-items:stretch;
+  }
+
+  .radical-box{
+    display:flex;
+    align-items:center;
+    background: var(--panel-3);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 0 16px;
+    flex: 1;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .radical-box:focus-within{
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  .radical-sign{
+    font-family: var(--mono);
+    font-size: 26px;
+    color: var(--cyan);
+    margin-right: 10px;
+    font-weight: 700;
+  }
+  .radical-box input{
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 19px;
+    font-weight: 500;
+    padding: 14px 0;
+  }
+  .radical-box input::placeholder{ color: #4d5568; }
+
+  .dice-btn{
+    flex: 0 0 auto;
+    width: 52px;
+    background: var(--panel-3);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    color: var(--muted);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .dice-btn:hover{ color: var(--cyan); border-color: var(--cyan); }
+  .dice-btn svg{ width:20px; height:20px; }
+
+  .go-row{ display:flex; gap:10px; margin-top: 12px; }
+  .go-btn{
+    flex:1;
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 12px; padding: 14px; font-family: 'Sora', sans-serif; font-weight: 600;
+    font-size: 15px; cursor: pointer; transition: transform .12s ease, background .15s ease;
+    box-shadow: 0 8px 20px -8px rgba(225,58,58,0.6);
+  }
+  .go-btn:hover{ background:#f14848; transform: translateY(-1px); }
+  .clear-btn{
+    background: var(--panel-3); border: 1.5px solid var(--line); color: var(--muted);
+    border-radius: 12px; padding: 14px 18px; font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 14px; cursor:pointer; transition: color .15s ease, border-color .15s ease;
+  }
+  .clear-btn:hover{ color: var(--text); border-color: var(--muted); }
+
+  .hint{ font-size: 12px; color: var(--muted); margin-top: 10px; min-height: 16px; }
+  .hint.err{ color: var(--accent); }
+
+  /* Result */
+  .result-area{ display:none; margin-top: 26px; }
+  .result-area.show{ display:block; animation: rise .35s ease; }
+  @keyframes rise{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform: translateY(0);} }
+
+  .result-hero{
+    background: var(--panel-3);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 14px;
+    padding: 22px;
+    text-align: center;
+  }
+  .result-eq{
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    word-break: break-all;
+  }
+  .result-eq .lhs{ color: var(--muted); }
+  .result-eq .rhs{ color: var(--text); }
+  .result-approx{
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    color: var(--cyan);
+  }
+
+  .badge-row{
+    display:flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content:center;
+    margin-top: 14px;
+  }
+  .badge{
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .badge.on{
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .detail-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .detail-card{
+    background: var(--panel-3); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  }
+  .detail-card.full{ grid-column: 1 / -1; }
+  .detail-title{
+    display:flex; align-items:center; gap:7px; font-size: 12px; font-weight: 700;
+    color: var(--cyan); margin-bottom: 8px; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .detail-title svg{ width:13px; height:13px; flex:0 0 auto; }
+  .detail-card p{ margin:0; font-size: 13.5px; color: var(--text); line-height:1.6; font-family: var(--mono); }
+
+  .factor-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .factor-chip{
+    font-family: var(--mono); font-size: 13px; background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 7px; padding: 4px 9px; color: var(--amber);
+  }
+
+  .steps-list{ margin:0; padding-left: 18px; font-size: 13px; color: var(--text); line-height: 1.8; }
+  .steps-list li{ font-family: var(--mono); }
+
+  .copy-row{ display:flex; justify-content:flex-end; margin-top: 10px; }
+  .copy-btn{
+    background: var(--panel-3); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 8px; padding: 7px 13px; font-size: 12px; cursor:pointer;
+    display:flex; align-items:center; gap:6px; transition: color .15s ease, border-color .15s ease;
+  }
+  .copy-btn:hover{ color: var(--cyan); border-color: var(--cyan); }
+  .copy-btn.copied{ color: var(--cyan); border-color: var(--cyan); }
+  .copy-btn svg{ width:13px; height:13px; }
+
+  .footer-note{
+    margin-top: 22px; font-size: 12px; color: #4d5568; display:flex;
+    justify-content: space-between; align-items:center; flex-wrap: wrap; gap: 6px;
+  }
+  .footer-note a{ color: var(--muted); text-decoration:none; }
+  .footer-note a:hover{ color: var(--cyan); }
+
+  @media (max-width: 480px){
+    .detail-grid{ grid-template-columns: 1fr; }
+    .ghost-sqrt{ font-size: 120px; }
+    .result-eq{ font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="card">
+    <div class="ghost-sqrt">√</div>
+
+    <div class="eyebrow">Teknobird Araçları</div>
+    <h1>Karekök Hesaplama</h1>
+    <p class="sub">Bir sayı girin; tam sayıysa kesin sonucu, tam kare değilse sadeleştirilmiş kök gösterimini ve ondalıklı yaklaşık değerini birlikte görün.</p>
+
+    <div class="input-row">
+      <div class="radical-box">
+        <span class="radical-sign">√</span>
+        <input type="text" id="num-input" placeholder="Bir sayı yazın, örn. 72" inputmode="decimal" autocomplete="off">
+      </div>
+      <button class="dice-btn" id="dice-btn" title="Rastgele sayı">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.4" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="go-row">
+      <button class="go-btn" id="calc-btn">Hesapla</button>
+      <button class="clear-btn" id="clear-btn">Temizle</button>
+    </div>
+    <div class="hint" id="hint-text">Ondalık sayılar da desteklenir, örn. 12.5</div>
+
+    <div class="result-area" id="result-area">
+      <div class="result-hero">
+        <div class="result-eq"><span class="lhs" id="eq-lhs">√72</span> <span class="rhs" id="eq-rhs">= 6√2</span></div>
+        <div class="result-approx" id="approx-text">≈ 8.485281</div>
+
+        <div class="badge-row" id="badge-row"></div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-card">
+          <div class="detail-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg>
+            Asal Çarpanlar
+          </div>
+          <div class="factor-chips" id="factor-chips"></div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Sayı Türü
+          </div>
+          <p id="type-text">—</p>
+        </div>
+        <div class="detail-card full">
+          <div class="detail-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 006.5 22H20V2H6.5A2.5 2.5 0 004 4.5v15z"/></svg>
+            Sadeleştirme Adımları
+          </div>
+          <ol class="steps-list" id="steps-list"></ol>
+        </div>
+      </div>
+
+      <div class="copy-row">
+        <button class="copy-btn" id="copy-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Sonucu Kopyala
+        </button>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      <span>Hesaplama tarayıcınızda yapılır — veri sunucuya gönderilmez.</span>
+      <a href="https://teknobird.com" target="_blank" rel="noopener">teknobird.com</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const input = document.getElementById('num-input');
+  const calcBtn = document.getElementById('calc-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const diceBtn = document.getElementById('dice-btn');
+  const hint = document.getElementById('hint-text');
+  const resultArea = document.getElementById('result-area');
+  const eqLhs = document.getElementById('eq-lhs');
+  const eqRhs = document.getElementById('eq-rhs');
+  const approxText = document.getElementById('approx-text');
+  const badgeRow = document.getElementById('badge-row');
+  const factorChips = document.getElementById('factor-chips');
+  const typeText = document.getElementById('type-text');
+  const stepsList = document.getElementById('steps-list');
+  const copyBtn = document.getElementById('copy-btn');
+
+  function primeFactorize(n){
+    const factors = [];
+    let d = 2;
+    let num = n;
+    while(d * d <= num){
+      while(num % d === 0){
+        factors.push(d);
+        num /= d;
+      }
+      d++;
+    }
+    if(num > 1) factors.push(num);
+    return factors;
+  }
+
+  function simplifyRadical(n){
+    // returns { outside, inside, factorsMap }
+    const factors = primeFactorize(n);
+    const counts = {};
+    factors.forEach(f => { counts[f] = (counts[f] || 0) + 1; });
+    let outside = 1;
+    let inside = 1;
+    Object.keys(counts).forEach(p => {
+      const c = counts[p];
+      const pairs = Math.floor(c / 2);
+      const remainder = c % 2;
+      outside *= Math.pow(Number(p), pairs);
+      if(remainder) inside *= Number(p);
+    });
+    return { outside, inside, factors, counts };
+  }
+
+  function formatNumber(n){
+    return n.toLocaleString('tr-TR');
+  }
+
+  function calculate(){
+    const raw = input.value.trim().replace(',', '.');
+
+    if(raw === ''){
+      showError('Lütfen bir sayı girin.');
+      return;
+    }
+
+    const value = parseFloat(raw);
+
+    if(isNaN(value)){
+      showError('Lütfen geçerli bir sayı girin.');
+      return;
+    }
+
+    if(value < 0){
+      showError('Negatif sayıların karekökü gerçek sayılarda tanımlı değildir.');
+      return;
+    }
+
+    if(value > 1e15){
+      showError('Lütfen 10¹⁵ değerinden küçük bir sayı girin.');
+      return;
+    }
+
+    clearError();
+
+    const isInteger = Number.isInteger(value);
+    const sqrtVal = Math.sqrt(value);
+
+    eqLhs.textContent = `√${formatNumber(value)}`;
+
+    badgeRow.innerHTML = '';
+    factorChips.innerHTML = '';
+    stepsList.innerHTML = '';
+
+    if(!isInteger){
+      // Non-integer: just show decimal result, no radical simplification
+      eqRhs.textContent = `= ${sqrtVal.toFixed(6).replace(/0+$/,'').replace(/\.$/,'')}`;
+      approxText.textContent = `Tam sayı olmayan girişler için doğrudan ondalık sonuç gösterilir.`;
+      typeText.textContent = 'Ondalıklı giriş';
+      addBadge('Ondalık Giriş', true);
+      stepsList.innerHTML = `<li>${raw} sayısının karekökü doğrudan hesaplanır.</li><li>√${raw} ≈ ${sqrtVal.toFixed(6)}</li>`;
+      resultArea.classList.add('show');
+      return;
+    }
+
+    const n = value;
+    const isPerfectSquare = Number.isInteger(sqrtVal);
+
+    if(n === 0){
+      eqRhs.textContent = '= 0';
+      approxText.textContent = '0 sayısının karekökü 0\'dır.';
+      typeText.textContent = 'Tam kare (sıfır)';
+      addBadge('Tam Kare', true);
+      addBadge('Rasyonel', true);
+      resultArea.classList.add('show');
+      return;
+    }
+
+    const { outside, inside, factors, counts } = simplifyRadical(n);
+
+    // Build factor chips
+    Object.keys(counts).sort((a,b)=>a-b).forEach(p => {
+      const c = counts[p];
+      const chip = document.createElement('span');
+      chip.className = 'factor-chip';
+      chip.textContent = c > 1 ? `${p}${toSuperscript(c)}` : `${p}`;
+      factorChips.appendChild(chip);
+    });
+
+    if(isPerfectSquare){
+      eqRhs.textContent = `= ${formatNumber(sqrtVal)}`;
+      approxText.textContent = `${formatNumber(n)} bir tam kare sayıdır.`;
+      typeText.textContent = 'Tam kare sayı';
+      addBadge('Tam Kare', true);
+      addBadge('Rasyonel', true);
+      stepsList.innerHTML = `
+        <li>${formatNumber(n)} = ${factors.join(' × ')}</li>
+        <li>Tüm asal çarpanlar çift sayıda tekrar ediyor, yani ${formatNumber(n)} bir tam karedir.</li>
+        <li>√${formatNumber(n)} = ${formatNumber(sqrtVal)}</li>
+      `;
+    } else {
+      const radicalStr = inside === 1 ? `${formatNumber(outside)}` : (outside === 1 ? `√${formatNumber(inside)}` : `${formatNumber(outside)}√${formatNumber(inside)}`);
+      eqRhs.textContent = `= ${radicalStr}`;
+      approxText.textContent = `≈ ${sqrtVal.toFixed(6)}`;
+      typeText.textContent = 'İrrasyonel sayı';
+      addBadge('İrrasyonel', true);
+      addBadge('Sadeleştirilebilir', outside > 1);
+
+      const stepsHtml = [];
+      stepsHtml.push(`<li>${formatNumber(n)} = ${factors.join(' × ')}</li>`);
+      if(outside > 1){
+        stepsHtml.push(`<li>Çift sayıda tekrar eden asal çarpanlar kökün dışına çıkarılır: ${outside}² faktörü bulunur.</li>`);
+        stepsHtml.push(`<li>√${formatNumber(n)} = ${outside}√${inside}</li>`);
+      } else {
+        stepsHtml.push(`<li>Hiçbir asal çarpan çift sayıda tekrar etmiyor, bu yüzden kök daha fazla sadeleşmez.</li>`);
+      }
+      stepsHtml.push(`<li>Ondalıklı yaklaşık değer: √${formatNumber(n)} ≈ ${sqrtVal.toFixed(6)}</li>`);
+      stepsList.innerHTML = stepsHtml.join('');
+    }
+
+    resultArea.classList.add('show');
+  }
+
+  function toSuperscript(n){
+    const map = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+    return String(n).split('').map(d => map[d] || d).join('');
+  }
+
+  function addBadge(label, on){
+    const b = document.createElement('span');
+    b.className = 'badge' + (on ? ' on' : '');
+    b.textContent = label;
+    badgeRow.appendChild(b);
+  }
+
+  function showError(msg){
+    hint.textContent = msg;
+    hint.classList.add('err');
+    resultArea.classList.remove('show');
+  }
+  function clearError(){
+    hint.classList.remove('err');
+    hint.textContent = 'Ondalık sayılar da desteklenir, örn. 12.5';
+  }
+
+  calcBtn.addEventListener('click', calculate);
+  input.addEventListener('keydown', e => { if(e.key === 'Enter') calculate(); });
+  input.addEventListener('input', () => {
+    if(/^\d+([.,]\d+)?$/.test(input.value.trim())) calculate();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    resultArea.classList.remove('show');
+    clearError();
+    input.focus();
+  });
+
+  diceBtn.addEventListener('click', () => {
+    const n = Math.floor(Math.random() * 9998) + 2;
+    input.value = n;
+    calculate();
+  });
+
+  copyBtn.addEventListener('click', () => {
+    const text = `${eqLhs.textContent} ${eqRhs.textContent}`;
+    navigator.clipboard.writeText(text).then(() => {
+      copyBtn.classList.add('copied');
+      setTimeout(() => copyBtn.classList.remove('copied'), 1400);
+    });
+  });
+
+  // auto height messaging for iframe embed
+  function postHeight(){
+    try{
+      const h = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: 'teknobird-sqrt-resize', height: h }, '*');
+    }catch(e){}
+  }
+  window.addEventListener('load', postHeight);
+  new MutationObserver(postHeight).observe(document.body, { childList:true, subtree:true, attributes:true });
+  window.addEventListener('resize', postHeight);
+})();
+</script>
+
+</body>
+</html>
